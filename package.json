@@ -31,5 +31,6 @@
     "tough-cookie": "^5.0.0",
     "tough-cookie-file-store": "^2.0.3",
     "websocket-stream": "^5.5.0"
-  }
+  },
+  "packageManager": "pnpm@7.5.1" 
 }
