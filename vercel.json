@@ -1,7 +1,7 @@
 {
   "version": 3,
   "installCommand": "npm install",
-  "buildCommand": "npm run build",
+  "buildCommand": "next build",
   "builds": [
     {
       "src": "index.js",
