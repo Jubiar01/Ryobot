@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "builds": [
