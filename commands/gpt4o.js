@@ -7,10 +7,8 @@ function formatResponse(response) {
 async function handleImage(api, event, imageUrl, query, thinkingMessageID) {
   const geminiUrl = `https://deku-rest-api.gleeze.com/gemini?prompt=${encodeURIComponent(query)}&url=${encodeURIComponent(imageUrl)}`;
   const { data } = await axios.get(geminiUrl);
-  const formattedResponse = `🤖 | 𝗖𝗛𝗔𝗧-𝗚𝗣𝗧-𝟰𝗢
-━━━━━━━━━━━━━━━━━━
-${formatResponse(data.gemini)}
-━━━━━━━━━━━━━━━━━━`;
+  const formattedResponse = `
+${formatResponse(data.gemini)}`;
   await api.editMessage(formattedResponse, thinkingMessageID);
 }
 
@@ -40,10 +38,8 @@ module.exports = {
 
     try {
       const { data } = await axios.get(apiUrl);
-      const formattedResponse = `🤖 | 𝗖𝗛𝗔𝗧-𝗚𝗣𝗧-𝟰𝗢
-━━━━━━━━━━━━━━━━━━
-${formatResponse(data.result)}
-━━━━━━━━━━━━━━━━━━`;
+      const formattedResponse = `
+${formatResponse(data.result)}`;
 
       await api.editMessage(formattedResponse, thinkingMessageID);
       
