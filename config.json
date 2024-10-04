@@ -1,7 +1,7 @@
 {
     "prefix": "/",
-    "owner": "Ryo Bwhahha",
-    "botname": ",Ryo",
+    "owner": "Jubiar",
+    "botname": "Jubiar",
     "apiOptions": {
         "forceLogin": false,
         "logLevel": "silent",
@@ -15,7 +15,7 @@
         "listenEvents": true
     },
     "adminBot": [
-        ""
+        "𝟣𝟢𝟢𝟢𝟤𝟫𝟧𝟦𝟦𝟩𝟣𝟢𝟩𝟥𝟪"
     ],
     "autoLoad": true,
     "autopost": true,
