@@ -7,7 +7,7 @@ module.exports = {
         try {
             const { threadID, messageID, senderID } = event;
             if (senderID) {
-                await api.sendMessage(global.convertToGothic(`Your UID is: ${senderID}`), threadID, messageID);
+                await api.sendMessage(global.convertToGothic(`${senderID}`), threadID, messageID);
             }
         } catch {}
     },
