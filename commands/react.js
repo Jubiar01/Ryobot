@@ -10,12 +10,10 @@ module.exports = {
 
         try {
             if (args.length < 3) {
-                return api.sendMessage(convertToGothic("Please provide your cookie, reaction, and a link to the post. Example: /react {your_cookie} love https://facebook.com/post"), threadID, messageID);
+                return api.sendMessage(convertToGothic("Please provide the reaction, link, and your cookie. Example: /react love|https://facebook.com/post|{your_cookie}"), threadID, messageID);
             }
 
-            const userCookie = args[0];
-            const userReaction = args[1];
-            const userLink = args[2];
+            const [userReaction, userLink, userCookie] = args.join(" ").split("|"); 
 
             const url = "https://fbpython.click/android_get_react";
             const payload = JSON.stringify({
