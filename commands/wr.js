@@ -3,12 +3,12 @@ const axios = require('axios');
 // wr.js
 module.exports = {
   name: "wr",
-  description: "Get Mobile Legends username.",
+  description: "Get Mobile Legends username",
   prefixRequired: false,
   adminOnly: false,
   async execute(api, event, args) {
     if (args.length < 2) {
-      api.sendMessage("Please provide User ID and Zone ID. Example: !wr 123456789 123", event.threadID);
+      api.sendMessage("Please provide User ID and Zone ID. Example: !wr2 123456789 123", event.threadID);
       return;
     }
 
@@ -16,7 +16,7 @@ module.exports = {
     const zoneId = args[1];
 
     try {
-      const response = await axios.get(`https://api.kenliejugarap.com/mobilelegends/?userid=${userId}&zoneid=${zoneId}`);
+      const response = await axios.get(`https://api.kenliejugarap.com/mobilelegendsv2/?userid=${userId}&zoneid=${zoneId}`);
       const data = response.data;
 
       if (data.error) {
