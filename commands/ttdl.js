@@ -51,7 +51,7 @@ module.exports = {
                     await downloadVideo();
 
                     // Send the video as an attachment after successful download
-                    api.sendMessage({
+                    api.editMessage({
                         body: `Here is your TikTok video: ${title}`,
                         attachment: fs.createReadStream(tempFilePath),
                     }, event.threadID, (error) => {
