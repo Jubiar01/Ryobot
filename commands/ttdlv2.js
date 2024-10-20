@@ -5,7 +5,7 @@ const path = require('path');
 let isProcessing = false;
 
 module.exports = {
-    name: "ttdl", // Assuming the command name is 'ttdl'
+    name: "ttdlv2", // Assuming the command name is 'ttdl'
     description: "Download a TikTok video",
     prefixRequired: false,
     adminOnly: false,
