@@ -3,12 +3,12 @@ const axios = require('axios');
 // wr.js
 module.exports = {
   name: "wr",
-  description: "Get Mobile Legends username",
+  description: "Get Mobile Legends username (v2 API).",
   prefixRequired: false,
   adminOnly: false,
   async execute(api, event, args) {
     if (args.length < 2) {
-      api.sendMessage("Please provide User ID and Zone ID. Example: !wr2 123456789 123", event.threadID);
+      api.sendMessage("Please provide User ID and Zone ID. Example: wr 123456789 123", event.threadID);
       return;
     }
 
@@ -23,7 +23,7 @@ module.exports = {
         api.sendMessage(data.error, event.threadID);
       } else {
         const username = data.username;
-        api.sendMessage(`Username for User ID ${userId} (Zone ID ${zoneId}): ${username}`, event.threadID);
+        api.sendMessage(`${username}`, event.threadID); // Only send the username
       }
     } catch (error) {
       console.error("Error fetching data:", error);
