@@ -8,8 +8,15 @@ module.exports = {
     async execute(api, event, args) {
         try {
             const userchat = args.join(" ");
+
+            // Notify the user that Gemini is finding an answer
+            api.sendMessage("Gemini is finding an answer...", event.threadID);
+
             const response = await axios.get(`https://deku-rest-apis.ooguy.com/gemini?prompt=${userchat}`);
-            const geminiResponse = response.data.gemini;
+            let geminiResponse = response.data.gemini;
+
+            // Remove '*' and '**' characters from the response
+            geminiResponse = geminiResponse.replace(/\*+/g, ''); 
 
             api.sendMessage(geminiResponse, event.threadID);
         } catch (error) {
