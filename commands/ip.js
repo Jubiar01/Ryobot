@@ -1,34 +1,37 @@
 const axios = require('axios');
 
 module.exports = {
-    name: "ip",
-    description: "Get IP information of a user.",
-    prefixRequired: false,
-    adminOnly: false,
-    async execute(api, event, args) {
-        const userChat = event.senderID; // Get the user's chat ID
-        const apiUrl = `https://api.ipfind.com/?ip=${userChat}&auth=d26dfc22-507f-428d-94bd-f59761882875`;
+  name: "ip",
+  description: "Get information about an IP address.",
+  prefixRequired: false,
+  adminOnly: false,
+  async execute(api, event, args) {
+    try {
+      // Get the IP address from the command arguments. If no IP address is provided, use the user's IP address.
+      const ipAddress = args[0] || event.senderID; 
 
-        try {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
+      // Make a request to the IPFind API.
+      const response = await axios.get(`https://api.ipfind.com/?ip=${ipAddress}&auth=d26dfc22-507f-428d-94bd-f59761882875`);
+      const data = response.data;
 
-            if (data.error) {
-                api.sendMessage(`Error: ${data.error_message}`, event.threadID);
-            } else {
-                // Format the IP information nicely
-                const ipInfo = `
-                    IP Address: ${data.ip_address}
-                    Country: ${data.country}
-                    City: ${data.city}
-                    Region: ${data.region}
-                    Timezone: ${data.timezone}
-                `;
-                api.sendMessage(ipInfo, event.threadID);
-            }
-        } catch (error) {
-            console.error("Error fetching IP information:", error);
-            api.sendMessage("An error occurred while fetching IP information.", event.threadID);
-        }
-    },
+      // Format the API response.
+      let message = `IP Address: ${data.ip_address}\n`;
+      message += `Country: ${data.country}\n`;
+      message += `Country Code: ${data.country_code}\n`;
+      message += `City: ${data.city}\n`;
+      message += `Continent: ${data.continent}\n`;
+      message += `Latitude: ${data.latitude}\n`;
+      message += `Longitude: ${data.longitude}\n`;
+      message += `Time Zone: ${data.time_zone}\n`;
+      message += `Currency: ${data.currency}\n`;
+      message += `ASN: ${data.asn}\n`;
+      message += `Organization: ${data.organization}\n`;
+
+      // Send the formatted message to the user.
+      api.sendMessage(message, event.threadID, event.messageID);
+    } catch (error) {
+      console.error(error);
+      api.sendMessage("An error occurred while fetching IP information.", event.threadID, event.messageID);
+    }
+  },
 };
