@@ -29,7 +29,7 @@ module.exports = {
                 const videoUrl = response.data.videoDownloadLink;
                 const videoTitle = response.data.title;
 
-                // Stream the video data
+                // Stream the video data and save to the file
                 const videoStream = await axios({
                     url: videoUrl,
                     method: 'GET',
