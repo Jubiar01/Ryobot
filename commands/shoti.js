@@ -43,14 +43,18 @@ module.exports = {
                     writer.on('error', reject);
                 });
 
-                // Edit the message to include the video attachment
-                await api.editMessage({
+                // Send a new message with the video attachment
+                await api.sendMessage({
                     body: global.convertToGothic(`Here is the Shoti video: ${videoTitle}`),
                     attachment: fs.createReadStream(filePath)
-                }, sentMessage.messageID);
+                }, threadID);
+
+                // Unsend the original "Downloading..." message
+                api.unsendMessage(sentMessage.messageID);
 
                 fs.unlinkSync(filePath);
             } else {
+                // Edit the message for errors
                 await api.editMessage(global.convertToGothic("Failed to fetch Shoti video. Please try again."), sentMessage.messageID);
             }
         } catch (error) {
