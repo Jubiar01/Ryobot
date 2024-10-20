@@ -18,12 +18,12 @@ module.exports = {
         const timeoutDuration = 30000; // Set timeout duration (e.g., 30 seconds)
 
         try {
-            // Make a GET request to the TikTok downloader API
-            const response = await axios.get(`https://tiktok-downloader-kas69xtdz-ryoevisu-s-projects.vercel.app/api/download?url=${encodeURIComponent(tiktokUrl)}`);
+            // Make a GET request to the new TikTok downloader API
+            const response = await axios.get(`https://api.kenliejugarap.com/tikwmbymarjhun/?url=${encodeURIComponent(tiktokUrl)}`);
 
             // Check if the response is successful
-            if (response.data.status) {
-                const videoUrl = response.data.video[0]; // Get the video URL from the response
+            if (response.data.status && response.data.response === "success") {
+                const videoUrl = response.data.hd_play; // Use HD video URL from the response
                 const title = response.data.title; // Get the video title
 
                 // Create a promise for the video download
