@@ -45,12 +45,18 @@ module.exports = {
                         body: `Here is your TikTok video: ${title}`,
                         attachment: fs.createReadStream(tempFilePath),
                     }, event.threadID, (error) => {
-                        // Clean up the temporary file after sending
-                        fs.unlink(tempFilePath, (unlinkError) => {
-                            if (unlinkError) {
-                                console.error("Error deleting the temporary file:", unlinkError);
-                            }
-                        });
+                        // Check for errors while sending the message
+                        if (error) {
+                            console.error("Error sending the video:", error);
+                            api.sendMessage("Failed to send the video. Please try again.", event.threadID);
+                        } else {
+                            // Cleanup the temporary file after sending
+                            fs.unlink(tempFilePath, (unlinkError) => {
+                                if (unlinkError) {
+                                    console.error("Error deleting the temporary file:", unlinkError);
+                                }
+                            });
+                        }
                     }, event.messageID);
                 });
 
