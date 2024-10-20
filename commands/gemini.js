@@ -10,7 +10,7 @@ module.exports = {
             const userchat = args.join(" ");
 
             // Notify the user that Gemini is finding an answer
-            api.sendMessage("Gemini is finding an answer...", event.threadID);
+            api.sendMessage(global.convertGothic("Gemini is finding an answer..."), event.threadID);
 
             const response = await axios.get(`https://deku-rest-apis.ooguy.com/gemini?prompt=${userchat}`);
             let geminiResponse = response.data.gemini;
@@ -18,10 +18,11 @@ module.exports = {
             // Remove '*' and '**' characters from the response
             geminiResponse = geminiResponse.replace(/\*+/g, ''); 
 
-            api.sendMessage(geminiResponse, event.threadID);
+            // Apply the Gothic font to the response
+            api.sendMessage(global.convertGothic(geminiResponse), event.threadID); 
         } catch (error) {
             console.error("Error calling Gemini API:", error);
-            api.sendMessage("Sorry, there was an error processing your request.", event.threadID);
+            api.sendMessage(global.convertGothic("Sorry, there was an error processing your request."), event.threadID);
         }
     },
 };
