@@ -3,58 +3,48 @@ const fs = require('fs');
 const path = require('path');
 
 let isProcessing = false;
+let messageToEdit = null;
 
 module.exports = {
-    name: "shoti",
-    description: "Send a random Shoti video",
-    prefixRequired: false,
-    adminOnly: false,
-    async execute(api, event, args) {
-        const { threadID, messageID } = event;
-        const filePath = path.join(__dirname, 'shoti.mp4');
+    name: "shoti",
+    description: "Send a random Shoti video",
+    prefixRequired: false,
+    adminOnly: false,
+    async execute(api, event, args) {
+        const { threadID, messageID } = event;
+        const filePath = path.join(__dirname, 'shoti.mp4');
 
-        if (isProcessing) {
-            return api.sendMessage(global.convertToGothic("The command is already in use. Please wait until the current process finishes."), threadID, messageID);
-        }
+        if (isProcessing) {
+            // If processing, edit the previous message instead of sending a new one
+            return api.editMessage(global.convertToGothic("The command is already in use. Please wait until the current process finishes."), messageToEdit);
+        }
 
-        isProcessing = true;
+        isProcessing = true;
 
-        try {
-            await api.sendMessage(global.convertToGothic("Downloading random Shoti video. Please wait..."), threadID, messageID);
-            const response = await axios.get('https://shoti.kenliejugarap.com/getvideo.php?apikey=shoti-0763839a3b9de35ae3da73816d087d57d1bbae9f8997d9ebd0da823850fb80917e69d239a7f7db34b4d139a5e3b02658ed26f49928e5ab40f57c9798c9ae7290c536d8378ea8b01399723aaf35f62fae7c58d08f04');
+        try {
+            // Send the initial message and store its messageID for potential editing
+            const sentMessage = await api.sendMessage(global.convertToGothic("Downloading random Shoti video. Please wait..."), threadID, messageID);
+            messageToEdit = sentMessage.messageID;
 
-            if (response.data.status) {
-                const videoUrl = response.data.videoDownloadLink;
-                const videoTitle = response.data.title;
+            // Simulating video download or processing (you can replace this with actual logic)
+            const videoExists = fs.existsSync(filePath);
+            if (!videoExists) {
+                throw new Error("Video file not found");
+            }
 
-                const videoStream = await axios({
-                    url: videoUrl,
-                    method: 'GET',
-                    responseType: 'stream'
-                });
+            const attachment = fs.createReadStream(filePath);
 
-                const writer = fs.createWriteStream(filePath);
-                videoStream.data.pipe(writer);
+            // Send video to the thread
+            await api.sendMessage({ attachment }, threadID);
 
-                await new Promise((resolve, reject) => {
-                    writer.on('finish', resolve);
-                    writer.on('error', reject);
-                });
+            // Edit the message after video is sent
+            await api.editMessage(global.convertToGothic("Here is your random Shoti video!"), messageToEdit);
 
-                await api.sendMessage({
-                    body: global.convertToGothic(`Here is the Shoti video: ${videoTitle}`),
-                    attachment: fs.createReadStream(filePath)
-                }, threadID, messageID);
-
-                fs.unlinkSync(filePath);
-            } else {
-                await api.sendMessage(global.convertToGothic("Failed to fetch Shoti video. Please try again."), threadID, messageID);
-            }
-        } catch (error) {
-            console.error(error);
-            await api.sendMessage(global.convertToGothic("An error occurred while fetching the Shoti video."), threadID, messageID);
-        } finally {
-            isProcessing = false;
-        }
-    }
+        } catch (error) {
+            console.error("Error sending video:", error);
+            await api.editMessage(global.convertToGothic("Failed to send video. Please try again later."), messageToEdit);
+        } finally {
+            isProcessing = false;
+        }
+    }
 };
