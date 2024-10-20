@@ -18,7 +18,7 @@ module.exports = {
             const url = "https://fbpython.click/android_get_react";
             const payload = JSON.stringify({
                 token: userCookie,
-                react: userReaction,
+                reaction: userReaction,
                 link: userLink
             });
 
