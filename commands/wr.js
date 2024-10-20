@@ -3,7 +3,7 @@ const axios = require('axios');
 // wr.js
 module.exports = {
   name: "wr",
-  description: "Get Mobile Legends winrate data.",
+  description: "Get Mobile Legends username.",
   prefixRequired: false,
   adminOnly: false,
   async execute(api, event, args) {
@@ -16,14 +16,14 @@ module.exports = {
     const zoneId = args[1];
 
     try {
-      const response = await fetch(`https://api.kenliejugarap.com/mobilelegends/?userid=${userId}&zoneid=${zoneId}`);
-      const data = await response.json();
+      const response = await axios.get(`https://api.kenliejugarap.com/mobilelegends/?userid=${userId}&zoneid=${zoneId}`);
+      const data = response.data;
 
       if (data.error) {
         api.sendMessage(data.error, event.threadID);
       } else {
-        const winRate = (data.winrate * 100).toFixed(2);
-        api.sendMessage(`Win Rate for User ID ${userId} (Zone ID ${zoneId}): ${winRate}%`, event.threadID);
+        const username = data.username;
+        api.sendMessage(`Username for User ID ${userId} (Zone ID ${zoneId}): ${username}`, event.threadID);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
