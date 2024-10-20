@@ -2,91 +2,69 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
+let isProcessing = false;
+
 module.exports = {
-    name: "ttdlv2",
-    description: "Download TikTok video from a given URL (Version 2).",
-    prefixRequired: true, // Require a prefix for the command
-    adminOnly: false, // Allow all users to access this command
+    name: "ttdl", // Assuming the command name is 'ttdl'
+    description: "Download a TikTok video",
+    prefixRequired: false,
+    adminOnly: false,
     async execute(api, event, args) {
-        // Check if a URL is provided
-        if (!args[0]) {
-            return api.sendMessage("Please provide a TikTok URL.", event.threadID);
+        const { threadID, messageID } = event;
+        const filePath = path.join(__dirname, 'tiktok_video.mp4');
+
+        // Check if a process is already running
+        if (isProcessing) {
+            return api.sendMessage(global.convertToGothic("The command is already in use. Please wait until the current process finishes."), threadID, messageID);
         }
 
-        const tiktokUrl = args[0]; // The TikTok URL from the user's command
-        const tempFilePath = path.join(__dirname, 'temp_video.mp4'); // Temporary file path
+        isProcessing = true; // Set processing state to true
 
         try {
-            // Make a GET request to the new TikTok downloader API
-            const response = await axios.get(`https://tiktok-downloader-kas69xtdz-ryoevisu-s-projects.vercel.app/api/download?url=${encodeURIComponent(tiktokUrl)}`);
+            // Notify user that the video is being downloaded
+            await api.sendMessage(global.convertToGothic("Downloading TikTok video. Please wait..."), threadID, messageID);
 
-            // Check if the response is successful
+            const videoUrl = args[0]; // Assuming the TikTok URL is passed as the first argument
+            const response = await axios.get(`https://tiktok-downloader-kas69xtdz-ryoevisu-s-projects.vercel.app/api/download?url=${encodeURIComponent(videoUrl)}`);
+
+            // Check if the video URL was successfully retrieved
             if (response.data.status) {
-                const videoUrl = response.data.video[0]; // Get the first video URL from the response
-                const title = response.data.title; // Get the video title
+                const videoDownloadLink = response.data.video[0]; // Assuming video is in an array
+                const videoTitle = response.data.title;
 
-                // Send a message indicating that the video is downloading
-                api.sendMessage("Downloading your TikTok video... Please wait.", event.threadID);
+                // Fetch the video stream
+                const videoStream = await axios({
+                    url: videoDownloadLink,
+                    method: 'GET',
+                    responseType: 'stream'
+                });
 
-                // Create a promise for the video download
-                const downloadVideo = async () => {
-                    const videoResponse = await axios({
-                        method: 'get',
-                        url: videoUrl,
-                        responseType: 'stream'
-                    });
+                // Create a writable stream to save the video
+                const writer = fs.createWriteStream(filePath);
+                videoStream.data.pipe(writer);
 
-                    // Create a writable stream to save the video
-                    const writer = fs.createWriteStream(tempFilePath);
-                    videoResponse.data.pipe(writer);
+                // Wait for the download to finish
+                await new Promise((resolve, reject) => {
+                    writer.on('finish', resolve);
+                    writer.on('error', reject);
+                });
 
-                    return new Promise((resolve, reject) => {
-                        writer.on('finish', () => resolve());
-                        writer.on('error', (err) => reject(err));
-                    });
-                };
+                // Send the video as an attachment
+                await api.sendMessage({
+                    body: global.convertToGothic(`Here is the TikTok video: ${videoTitle}`),
+                    attachment: fs.createReadStream(filePath)
+                }, threadID, messageID);
 
-                // Execute the download
-                try {
-                    await downloadVideo();
-
-                    // Send the video as an attachment after successful download
-                    api.sendMessage({
-                        body: `Here is your TikTok video: ${title}`,
-                        attachment: fs.createReadStream(tempFilePath),
-                    }, event.threadID, (error) => {
-                        if (error) {
-                            console.error("Error sending the video:", error);
-                            api.sendMessage("Failed to send the video. Please try again.", event.threadID);
-                        } else {
-                            // Cleanup the temporary file after sending
-                            fs.unlink(tempFilePath, (unlinkError) => {
-                                if (unlinkError) {
-                                    console.error("Error deleting the temporary file:", unlinkError);
-                                }
-                            });
-                        }
-                    }, event.messageID);
-                } catch (error) {
-                    // Handle download error
-                    console.error("Error during the download:", error);
-                    api.sendMessage("An error occurred while downloading the video: " + error.message, event.threadID);
-                    // Ensure to delete the temporary file if it exists
-                    if (fs.existsSync(tempFilePath)) {
-                        fs.unlink(tempFilePath, (unlinkError) => {
-                            if (unlinkError) {
-                                console.error("Error deleting the temporary file:", unlinkError);
-                            }
-                        });
-                    }
-                }
+                // Clean up by deleting the temporary video file
+                fs.unlinkSync(filePath);
             } else {
-                return api.sendMessage("Failed to download the video. Please check the TikTok URL.", event.threadID);
+                await api.sendMessage(global.convertToGothic("Failed to fetch TikTok video. Please try again."), threadID, messageID);
             }
         } catch (error) {
-            console.error("Error during the API request:", error);
-            return api.sendMessage("An error occurred while processing your request. Please try again later.", event.threadID);
+            console.error("Error while fetching the TikTok video:", error);
+            await api.sendMessage(global.convertToGothic("An error occurred while fetching the TikTok video."), threadID, messageID);
+        } finally {
+            isProcessing = false; // Reset processing state
         }
-    },
+    }
 };
-                      
