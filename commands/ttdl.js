@@ -15,19 +15,38 @@ module.exports = {
         const apiUrl = `https://tiktok-downloader-kas69xtdz-ryoevisu-s-projects.vercel.app/api/download?url=${encodeURIComponent(tiktokUrl)}`;
 
         try {
-            const response = await axios.get(apiUrl);
+            const response = await axios.get(apiUrl, { timeout: 10000 }); // 10 second timeout
             const data = response.data;
 
-            if (data.status === 'success') {
-                const videoUrl = data.video_url;
-                await api.sendMessage("Here's your TikTok video:", event.threadID);
-                await api.sendMessage({ attachment: await api.getStreamFromURL(videoUrl) }, event.threadID);
+            if (data.status === 'success' && data.video_url) {
+                await api.sendMessage("Downloading your TikTok video. This may take a moment...", event.threadID);
+                try {
+                    await api.sendMessage({ attachment: await api.getStreamFromURL(data.video_url) }, event.threadID);
+                } catch (streamError) {
+                    console.error('Error streaming video:', streamError);
+                    await api.sendMessage("The video was found, but there was an error while sending it. The video might be too large or temporarily unavailable.", event.threadID);
+                }
+            } else if (data.status === 'error') {
+                await api.sendMessage(`Failed to download the TikTok video: ${data.message || 'Unknown error'}`, event.threadID);
             } else {
-                await api.sendMessage("Failed to download the TikTok video. Please check the URL and try again.", event.threadID);
+                await api.sendMessage("The API response was in an unexpected format. Please try again later or contact the bot administrator.", event.threadID);
             }
         } catch (error) {
             console.error('Error downloading TikTok video:', error);
-            await api.sendMessage("An error occurred while trying to download the TikTok video. Please try again later.", event.threadID);
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                await api.sendMessage(`Error ${error.response.status}: ${error.response.data.message || 'Unknown error'}. Please check the URL and try again.`, event.threadID);
+            } else if (error.request) {
+                // The request was made but no response was received
+                await api.sendMessage("No response received from the server. The service might be down or experiencing issues. Please try again later.", event.threadID);
+            } else if (error.code === 'ECONNABORTED') {
+                // Timeout error
+                await api.sendMessage("The request timed out. The server might be overloaded. Please try again later.", event.threadID);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                await api.sendMessage("An unexpected error occurred. Please try again later or contact the bot administrator.", event.threadID);
+            }
         }
     },
 };
