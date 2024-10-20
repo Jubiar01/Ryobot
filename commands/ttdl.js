@@ -26,22 +26,25 @@ module.exports = {
                 const title = response.data.title; // Get the video title
 
                 // Download the video and save it to a temporary file
-                const videoResponse = await axios.get(videoUrl, { responseType: 'stream' });
+                const videoResponse = await axios({
+                    method: 'get',
+                    url: videoUrl,
+                    responseType: 'stream'
+                });
+
+                // Create a writable stream to save the video
                 const writer = fs.createWriteStream(tempFilePath);
-                
+
+                // Pipe the response data to the writable stream
                 videoResponse.data.pipe(writer);
 
-                // Wait for the download to complete
+                // Handle successful write completion
                 writer.on('finish', () => {
                     // Send the video as an attachment
                     api.sendMessage({
                         body: `Here is your TikTok video: ${title}`,
                         attachment: fs.createReadStream(tempFilePath),
                     }, event.threadID, (error) => {
-                        if (error) {
-                            console.error("Error sending the video:", error);
-                        }
-
                         // Clean up the temporary file after sending
                         fs.unlink(tempFilePath, (unlinkError) => {
                             if (unlinkError) {
@@ -51,17 +54,17 @@ module.exports = {
                     }, event.messageID);
                 });
 
-                // Handle writer error
+                // Handle write errors
                 writer.on('error', (writeError) => {
                     console.error("Error writing the video file:", writeError);
-                    api.sendMessage("An error occurred while downloading the video.", event.threadID);
+                    api.sendMessage("An error occurred while saving the video.", event.threadID);
                 });
             } else {
                 return api.sendMessage("Failed to download the video. Please check the TikTok URL.", event.threadID);
             }
         } catch (error) {
-            console.error(error);
-            return api.sendMessage("An error occurred while processing your request.", event.threadID);
+            console.error("Error during the API request:", error);
+            return api.sendMessage("An error occurred while processing your request. Please try again later.", event.threadID);
         }
     },
 };
