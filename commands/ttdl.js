@@ -15,7 +15,6 @@ module.exports = {
 
         const tiktokUrl = args[0]; // The TikTok URL from the user's command
         const tempFilePath = path.join(__dirname, 'temp_video.mp4'); // Temporary file path
-        const timeoutDuration = 30000; // Set timeout duration (e.g., 30 seconds)
 
         try {
             // Make a GET request to the new TikTok downloader API
@@ -25,6 +24,9 @@ module.exports = {
             if (response.data.status && response.data.response === "success") {
                 const videoUrl = response.data.hd_play; // Use HD video URL from the response
                 const title = response.data.title; // Get the video title
+
+                // Send a message indicating that the video is downloading
+                api.sendMessage("Downloading your TikTok video... Please wait.", event.threadID);
 
                 // Create a promise for the video download
                 const downloadVideo = async () => {
@@ -44,16 +46,9 @@ module.exports = {
                     });
                 };
 
-                // Create a timeout promise
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => {
-                        reject(new Error("Download timed out."));
-                    }, timeoutDuration);
-                });
-
-                // Race between download and timeout
+                // Execute the download
                 try {
-                    await Promise.race([downloadVideo(), timeoutPromise]);
+                    await downloadVideo();
 
                     // Send the video as an attachment after successful download
                     api.sendMessage({
@@ -73,7 +68,7 @@ module.exports = {
                         }
                     }, event.messageID);
                 } catch (error) {
-                    // Handle timeout or download error
+                    // Handle download error
                     console.error("Error during the download:", error);
                     api.sendMessage("An error occurred while downloading the video: " + error.message, event.threadID);
                     // Ensure to delete the temporary file if it exists
