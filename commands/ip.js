@@ -7,12 +7,17 @@ module.exports = {
   adminOnly: false,
   async execute(api, event, args) {
     try {
-      // Get the IP address from the command arguments. If no IP address is provided, use the user's IP address.
-      const ipAddress = args[0] || event.senderID; 
+      let ipAddress = args[0]; 
 
-      // Make a request to the IPFind API.
-      const response = await axios.get(`https://api.ipfind.com/?ip=${ipAddress}&auth=d26dfc22-507f-428d-94bd-f59761882875`);
-      const data = response.data;
+      // If no IP address is provided, make a request to ipify to get the user's public IP address
+      if (!ipAddress) {
+        const response = await axios.get('https://api.ipify.org?format=json');
+        ipAddress = response.data.ip;
+      }
+
+      // Make a request to the IPFind API with the obtained IP address
+      const ipfindResponse = await axios.get(`https://api.ipfind.com/?ip=${ipAddress}&auth=d26dfc22-507f-428d-94bd-f59761882875`);
+      const data = ipfindResponse.data;
 
       // Check if the API returned an error
       if (data.error) {
