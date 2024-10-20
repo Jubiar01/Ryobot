@@ -1,39 +1,38 @@
-const axios = require('axios');
+const axios = require('axios'); // Ensure axios is installed for making HTTP requests
 
 module.exports = {
     name: "ttdl",
-    description: "Download a TikTok video by providing its URL.",
-    prefixRequired: true,
-    adminOnly: false,
+    description: "Download TikTok video from a given URL.",
+    prefixRequired: true, // You might want a prefix for this command
+    adminOnly: false, // Allow all users to access this command
     async execute(api, event, args) {
-        if (args.length === 0) {
-            await api.sendMessage("Please provide a TikTok video URL.", event.threadID);
-            return;
+        // Check if a URL is provided
+        if (!args[0]) {
+            return api.sendMessage("Please provide a TikTok URL.", event.threadID);
         }
 
-        const tiktokUrl = args[0];
-        const apiUrl = `https://tiktok-downloader-kas69xtdz-ryoevisu-s-projects.vercel.app/api/download?url=${encodeURIComponent(tiktokUrl)}`;
+        const tiktokUrl = args[0]; // The TikTok URL from the user's command
 
         try {
-            const response = await axios.get(apiUrl);
-            const data = response.data;
+            // Make a GET request to the TikTok downloader API
+            const response = await axios.get(`https://tiktok-downloader-kas69xtdz-ryoevisu-s-projects.vercel.app/api/download?url=${encodeURIComponent(tiktokUrl)}`);
 
-            if (data.status && data.video && data.video.length > 0) {
-                const videoUrl = data.video[0];
-                const audioUrl = data.audio && data.audio.length > 0 ? data.audio[0] : null;
+            // Check if the response is successful
+            if (response.data.status) {
+                const videoUrl = response.data.video[0]; // Get the video URL from the response
+                const title = response.data.title; // Get the video title
 
-                let message = `Title: ${data.title}\n\nVideo URL: ${videoUrl}`;
-                if (audioUrl) {
-                    message += `\n\nAudio URL: ${audioUrl}`;
-                }
-
-                await api.sendMessage(message, event.threadID);
+                // Send the video as an attachment
+                return api.sendMessage({
+                    body: `Here is your TikTok video: ${title}`,
+                    attachment: await axios.get(videoUrl, { responseType: 'arraybuffer' }).then(res => Buffer.from(res.data)),
+                }, event.threadID, event.messageID);
             } else {
-                await api.sendMessage("Failed to download the TikTok video. Please check the URL and try again.", event.threadID);
+                return api.sendMessage("Failed to download the video. Please check the TikTok URL.", event.threadID);
             }
         } catch (error) {
-            console.error("Error downloading TikTok video:", error);
-            await api.sendMessage("An error occurred while trying to download the TikTok video. Please try again later.", event.threadID);
+            console.error(error);
+            return api.sendMessage("An error occurred while processing your request.", event.threadID);
         }
     },
 };
