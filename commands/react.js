@@ -9,7 +9,7 @@ module.exports = {
         const { threadID, messageID } = event;
 
         try {
-            if (args.length < 3) {
+            if (args.length === 0) {
                 return api.sendMessage(convertToGothic("Please provide the reaction, link, and your cookie. Example: /react love|https://facebook.com/post|{your_cookie}"), threadID, messageID);
             }
 
