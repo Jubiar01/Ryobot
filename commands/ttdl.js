@@ -10,7 +10,7 @@ module.exports = {
     async execute(api, event, args) {
         // Check if a URL is provided
         if (!args[0]) {
-            return api.sendMessage("Please provide a TikTok URL.", event.threadID);
+            return api.sendMessage(global.convertToGothic("Please provide a TikTok URL."), event.threadID);
         }
 
         const tiktokUrl = args[0]; // The TikTok URL from the user's command
@@ -26,7 +26,7 @@ module.exports = {
                 const title = response.data.title; // Get the video title
 
                 // Send a message indicating that the video is downloading
-                api.sendMessage("Downloading your TikTok video... Please wait.", event.threadID);
+                await api.sendMessage(global.convertToGothic("Downloading your TikTok video... Please wait."), event.threadID);
 
                 // Create a promise for the video download
                 const downloadVideo = async () => {
@@ -51,13 +51,13 @@ module.exports = {
                     await downloadVideo();
 
                     // Send the video as an attachment after successful download
-                    api.sendMessage({
-                        body: `Here is your TikTok video: ${title}`,
+                    await api.sendMessage({
+                        body: global.convertToGothic(`Here is your TikTok video: ${title}`),
                         attachment: fs.createReadStream(tempFilePath),
                     }, event.threadID, (error) => {
                         if (error) {
                             console.error("Error sending the video:", error);
-                            api.sendMessage("Failed to send the video. Please try again.", event.threadID);
+                            api.sendMessage(global.convertToGothic("Failed to send the video. Please try again."), event.threadID);
                         } else {
                             // Cleanup the temporary file after sending
                             fs.unlink(tempFilePath, (unlinkError) => {
@@ -70,7 +70,7 @@ module.exports = {
                 } catch (error) {
                     // Handle download error
                     console.error("Error during the download:", error);
-                    api.sendMessage("An error occurred while downloading the video: " + error.message, event.threadID);
+                    api.sendMessage(global.convertToGothic("An error occurred while downloading the video: " + error.message), event.threadID);
                     // Ensure to delete the temporary file if it exists
                     if (fs.existsSync(tempFilePath)) {
                         fs.unlink(tempFilePath, (unlinkError) => {
@@ -81,11 +81,11 @@ module.exports = {
                     }
                 }
             } else {
-                return api.sendMessage("Failed to download the video. Please check the TikTok URL.", event.threadID);
+                return api.sendMessage(global.convertToGothic("Failed to download the video. Please check the TikTok URL."), event.threadID);
             }
         } catch (error) {
             console.error("Error during the API request:", error);
-            return api.sendMessage("An error occurred while processing your request. Please try again later.", event.threadID);
+            return api.sendMessage(global.convertToGothic("An error occurred while processing your request. Please try again later."), event.threadID);
         }
     },
 };
