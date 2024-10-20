@@ -14,6 +14,12 @@ module.exports = {
       const response = await axios.get(`https://api.ipfind.com/?ip=${ipAddress}&auth=d26dfc22-507f-428d-94bd-f59761882875`);
       const data = response.data;
 
+      // Check if the API returned an error
+      if (data.error) {
+        api.sendMessage(`Error: ${data.error}`, event.threadID, event.messageID);
+        return;
+      }
+
       // Format the API response.
       let message = `IP Address: ${data.ip_address}\n`;
       message += `Country: ${data.country}\n`;
