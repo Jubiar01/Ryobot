@@ -1,21 +1,20 @@
 const axios = require('axios');
 
 module.exports = {
-  name: "gemini",
-  description: "Get a response from the Gemini AI model.",
-  prefixRequired: false,
-  adminOnly: false,
-  async execute(api, event, args) {
-    try {
-      const userchat = args.join(" "); // Combine all arguments into a single string
-      const response = await axios.get(`https://deku-rest-apis.ooguy.com/gemini?prompt=${encodeURIComponent(userchat)}`);
-      const geminiData = response.data; 
+    name: "gemini",
+    description: "Talk to Gemini AI.",
+    prefixRequired: false,
+    adminOnly: false,
+    async execute(api, event, args) {
+        try {
+            const userchat = args.join(" ");
+            const response = await axios.get(`https://deku-rest-apis.ooguy.com/gemini?prompt=${userchat}`);
+            const geminiResponse = response.data.gemini;
 
-      // Send the Gemini response back to the user
-      api.sendMessage(geminiData, event.threadID); 
-    } catch (error) {
-      console.error("Error fetching Gemini data:", error); 
-      api.sendMessage("Sorry, there was an error processing your request.", event.threadID);
-    }
-  },
+            api.sendMessage(geminiResponse, event.threadID);
+        } catch (error) {
+            console.error("Error calling Gemini API:", error);
+            api.sendMessage("Sorry, there was an error processing your request.", event.threadID);
+        }
+    },
 };
