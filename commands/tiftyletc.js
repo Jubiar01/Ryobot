@@ -52,9 +52,9 @@ module.exports = {
             else if (userUrl.includes('youtube.com')) platform = "YouTube";
             else if (userUrl.includes('linkedin.com')) platform = "LinkedIn";
 
-            // Send the file to the user with the customized message
+            // Send the file to the user with the customized Gothic-formatted message
             await api.sendMessage({
-                body: `Here is your downloaded ${platform} file:`,
+                body: convertToGothic(`Here is your downloaded ${platform} file:`),
                 attachment: fs.createReadStream(filePath)
             }, threadID);
 
@@ -62,7 +62,7 @@ module.exports = {
             await unlinkAsync(filePath);
 
             // Edit the processing message to indicate completion
-            await api.editMessage("Download completed successfully!", processingMessage.messageID);
+            await api.editMessage(convertToGothic("Download completed successfully!"), processingMessage.messageID);
         } catch (error) {
             console.error(error);
             await api.editMessage("An error occurred while processing your request. Please try again.", processingMessage.messageID);
