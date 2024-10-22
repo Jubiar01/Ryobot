@@ -2,21 +2,24 @@ const axios = require('axios');
 
 module.exports = {
     name: "react",
-    description: "Send a reaction to a Facebook post.",
+    description: "Send a reaction to a Facebook post using the format: !react <reaction>|<cookie>|<facebook-post-link>",
     prefixRequired: true,
     adminOnly: false,
 
     async execute(api, event, args) {
         const { threadID, messageID } = event;
 
-        // Validate user input
-        if (args.length < 3) {
-            return api.sendMessage("Usage: !react <reaction> <cookie> <link>", threadID, messageID);
+        // Combine args and split by "|" to extract reaction, cookie, and link
+        const input = args.join(" ").split("|");
+
+        // Validate if all required arguments are provided
+        if (input.length !== 3) {
+            return api.sendMessage("Usage: /react <reaction>|<cookie>|<facebook-post-link>", threadID, messageID);
         }
 
-        const reaction = args[0]; // The reaction type, e.g., "WOW", "LIKE", "LOVE"
-        const cookie = args[1]; // The user's Facebook cookie
-        const link = args[2]; // The link to the Facebook post
+        const reaction = input[0].trim();  // The reaction type (e.g., "WOW", "LIKE", "LOVE")
+        const cookie = input[1].trim();    // The user's Facebook cookie
+        const link = input[2].trim();      // The link to the Facebook post
 
         const data = JSON.stringify({
             "reaction": reaction,
