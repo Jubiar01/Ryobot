@@ -1,60 +1,63 @@
-const axios = require('axios'); // Importing axios for making HTTP requests
-const fs = require('fs'); // Importing fs to handle file operations
-const path = require('path'); // Importing path for file paths
-const request = require('request'); // For downloading files
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
-    name: "tiftyletc",
-    description: "Download media from TikTok, Instagram, Facebook, Twitter, YouTube, and LinkedIn.",
-    prefixRequired: false,
-    adminOnly: false,
+    name: "tiftyletc", // The name of the command
+    description: "Download content from TikTok, Instagram, Facebook, Twitter, YouTube, and LinkedIn.", // A brief description of the command
+    prefixRequired: false, // Set to false to allow it to be triggered without a prefix
+    adminOnly: false, // Set to false, so anyone can use the command
 
     async execute(api, event, args) {
-        const { threadID, messageID } = event;
-        const userProvidedUrl = args[0]; // The URL provided by the user
+        const { threadID } = event;
+        const userUrl = args[0]; // The URL to download from
 
-        if (!userProvidedUrl) {
-            return api.sendMessage("Please provide a URL to download from TikTok, Instagram, Facebook, Twitter, YouTube, or LinkedIn.", threadID, messageID);
+        if (!userUrl) {
+            return api.sendMessage("Please provide a URL to download.", threadID);
         }
 
-        // Inform the user the download is being processed
-        const processingMessage = await api.sendMessage("Processing your request, please wait...", threadID, messageID);
-
         try {
-            // Making a request to the API with the user-provided URL
-            const apiUrl = `https://deku-rest-apis.ooguy.com/api/anydl?url=${userProvidedUrl}`;
-            const response = await axios.get(apiUrl);
-            const result = response.data;
+            // Fetch download link from API
+            const response = await axios.get(`https://deku-rest-apis.ooguy.com/api/anydl?url=${encodeURIComponent(userUrl)}`);
+            const { result, status } = response.data;
 
-            if (result.status && result.result) {
-                const downloadUrl = result.result; // The download link provided by the API
-                const filename = `download_${Date.now()}.mp4`; // Temporary file name for the download
-
-                // Download the file and store it temporarily
-                const filePath = path.join(__dirname, filename);
-                const fileStream = fs.createWriteStream(filePath);
-
-                request(downloadUrl).pipe(fileStream).on('close', async () => {
-                    // Send the file to the user
-                    await api.sendMessage({body: "Here is your downloaded file.", attachment: fs.createReadStream(filePath)}, threadID);
-
-                    // Clean up the temporary file
-                    fs.unlinkSync(filePath);
-
-                    // Edit the processing message to indicate completion
-                    await api.editMessage("Your file has been downloaded and sent successfully.", processingMessage.messageID);
+            if (status && result) {
+                // Create a temp file to store the download
+                const tempFilePath = path.join(__dirname, 'temp.mp4');
+                
+                // Download file and store it temporarily
+                const downloadStream = await axios({
+                    method: 'get',
+                    url: result,
+                    responseType: 'stream'
                 });
 
-            } else {
-                // If there was an error or no valid download link
-                await api.editMessage("Failed to download. The URL may not be supported.", processingMessage.messageID);
-            }
+                const writer = fs.createWriteStream(tempFilePath);
+                downloadStream.data.pipe(writer);
 
+                writer.on('finish', async () => {
+                    // Send the file to the user
+                    await api.sendMessage({
+                        body: "Here is your downloaded file:",
+                        attachment: fs.createReadStream(tempFilePath)
+                    }, threadID);
+
+                    // Delete the temp file after sending it
+                    fs.unlink(tempFilePath, (err) => {
+                        if (err) console.error("Failed to delete the temporary file.", err);
+                    });
+                });
+
+                writer.on('error', (err) => {
+                    console.error("Error writing the file.", err);
+                    api.sendMessage("There was an error downloading the file.", threadID);
+                });
+            } else {
+                api.sendMessage("Failed to retrieve the download link. Please check the URL and try again.", threadID);
+            }
         } catch (error) {
-            // Handle errors in case the API request fails
-            await api.editMessage("An error occurred while processing your request. Please try again later.", processingMessage.messageID);
-            console.error(error);
+            console.error("Error occurred while fetching the download link: ", error);
+            api.sendMessage("An error occurred while processing the request.", threadID);
         }
     },
 };
-              
