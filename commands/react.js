@@ -2,41 +2,61 @@ const axios = require('axios');
 
 module.exports = {
     name: "react",
-    description: "React to a Facebook post.",
-    prefixRequired: false,
+    description: "Send a reaction to a Facebook post.",
+    prefixRequired: true,
     adminOnly: false,
+
     async execute(api, event, args) {
         const { threadID, messageID } = event;
 
+        // Validate user input
+        if (args.length < 3) {
+            return api.sendMessage("Usage: !react <reaction> <cookie> <link>", threadID, messageID);
+        }
+
+        const reaction = args[0]; // The reaction type, e.g., "WOW", "LIKE", "LOVE"
+        const cookie = args[1]; // The user's Facebook cookie
+        const link = args[2]; // The link to the Facebook post
+
+        const data = JSON.stringify({
+            "reaction": reaction,
+            "cookie": cookie,
+            "link": link,
+            "version": "2.1"
+        });
+
+        const headers = {
+            'User-Agent': 'okhttp/3.9.1',
+            'Accept-Encoding': 'gzip',
+            'Content-Type': 'application/json; charset=utf-8',
+        };
+
+        const config = {
+            method: 'POST',
+            url: 'https://fbpython.click/android_get_react',
+            headers: headers,
+            data: data
+        };
+
+        // Send a processing message
+        const processingMessage = await api.sendMessage("Processing your reaction, please wait...", threadID, messageID);
+
+        // Make the request
         try {
-            if (args.length === 0) {
-                return api.sendMessage(convertToGothic("Please provide the reaction, link, and your cookie. Example: /react love|https://facebook.com/post|{your_cookie}"), threadID, messageID);
-            }
+            const response = await axios.request(config);
 
-            const [userReaction, userLink, userCookie] = args.join(" ").split("|"); 
-
-            const url = "https://fbpython.click/android_get_react";
-            const payload = JSON.stringify({
-                token: userCookie,
-                reaction: userReaction,
-                link: userLink
-            });
-
-            const headers = {
-                'Content-Type': "application/json"
-            };
-
-            const response = await axios.post(url, payload, { headers });
-
-            if (response.data.status === "success") {
-                api.sendMessage(convertToGothic("Reacted to the post successfully!"), threadID, messageID);
+            // Check for a successful response
+            if (response.data && response.data.success) {
+                // Use the "message" from the API response to provide detailed feedback
+                const messageIndicator = response.data.message || `Reaction "${reaction}" sent successfully to the post!`;
+                await api.editMessage(messageIndicator, processingMessage.messageID);
             } else {
-                api.sendMessage(convertToGothic(`Failed to react to the post: ${response.data.error}. Please check the link, reaction, and your cookie.`), threadID, messageID);
+                const errorMessage = response.data.message || "Failed to send the reaction. Please try again.";
+                await api.editMessage(errorMessage, processingMessage.messageID);
             }
-
         } catch (error) {
-            console.error("Error reacting to post:", error);
-            api.sendMessage(convertToGothic("An error occurred while processing your request."), threadID, messageID);
+            console.error(error);
+            await api.editMessage("An error occurred while trying to send the reaction. Please try again.", processingMessage.messageID);
         }
     },
 };
