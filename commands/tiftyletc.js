@@ -19,7 +19,17 @@ module.exports = {
             return api.sendMessage("Please provide a valid URL.", threadID, messageID);
         }
 
-        const processingMessage = await api.sendMessage("Processing your download, please wait...", threadID, messageID);
+        // Determine platform based on the URL to customize the processing message
+        let platform = "file"; // Default to generic file
+        if (userUrl.includes('tiktok.com')) platform = "TikTok";
+        else if (userUrl.includes('instagram.com')) platform = "Instagram";
+        else if (userUrl.includes('facebook.com')) platform = "Facebook";
+        else if (userUrl.includes('twitter.com')) platform = "Twitter";
+        else if (userUrl.includes('youtube.com')) platform = "YouTube";
+        else if (userUrl.includes('linkedin.com')) platform = "LinkedIn";
+
+        // Send a processing message with the platform name in Gothic font
+        const processingMessage = await api.sendMessage(convertToGothic(`Processing your ${platform} download, please wait...`), threadID, messageID);
 
         try {
             // Call the API with the user-provided URL
@@ -43,15 +53,6 @@ module.exports = {
                     .on('error', reject);
             });
 
-            // Determine platform based on the URL and customize the message
-            let platform = "file"; // Default to generic file
-            if (userUrl.includes('tiktok.com')) platform = "TikTok";
-            else if (userUrl.includes('instagram.com')) platform = "Instagram";
-            else if (userUrl.includes('facebook.com')) platform = "Facebook";
-            else if (userUrl.includes('twitter.com')) platform = "Twitter";
-            else if (userUrl.includes('youtube.com')) platform = "YouTube";
-            else if (userUrl.includes('linkedin.com')) platform = "LinkedIn";
-
             // Send the file to the user with the customized Gothic-formatted message
             await api.sendMessage({
                 body: convertToGothic(`Here is your downloaded ${platform} file:`),
@@ -61,7 +62,7 @@ module.exports = {
             // Clean up: Delete the temporary file
             await unlinkAsync(filePath);
 
-            // Edit the processing message to indicate completion
+            // Edit the processing message to indicate completion in Gothic font
             await api.editMessage(convertToGothic("Download completed successfully!"), processingMessage.messageID);
         } catch (error) {
             console.error(error);
