@@ -7,14 +7,14 @@ module.exports = {
     adminOnly: false,
 
     async execute(api, event, args) {
-        const { threadID, messageID, senderID } = event;
+        const { threadID, messageID } = event;
 
         // Combine args and split by "|" to extract reaction, cookie, and link
         const input = args.join(" ").split("|");
 
         // Validate if all required arguments are provided
         if (input.length !== 3) {
-            return api.sendMessage("Usage: /react <reaction>|<cookie>|<facebook-post-link>", threadID, messageID);
+            return api.sendMessage("Usage: !react <reaction>|<cookie>|<facebook-post-link>", threadID, messageID);
         }
 
         const reaction = input[0].trim();  // The reaction type (e.g., "WOW", "LIKE", "LOVE")
@@ -53,10 +53,14 @@ module.exports = {
                 const messageIndicator = response.data.message || `Reaction "${reaction}" sent successfully to the post!`;
                 await api.editMessage(messageIndicator, processingMessage.messageID);
             } else {
-                // Check if the message indicates a cooldown
-                const cooldownMessage = response.data.message;
-                if (cooldownMessage && cooldownMessage.includes("You're currently in cooldown phase")) {
-                    const minutes = parseInt(cooldownMessage.match(/(\d+) minute/)[1], 10); // Extract cooldown time in minutes
+                // Handle invalid reaction type message
+                if (response.data.message === "Invalid reaction type!") {
+                    const availableReactionsMessage = "Here's the available reactions: WOW, LOVE, SAD, CARE, HAHA, ANGRY";
+                    await api.editMessage(availableReactionsMessage, processingMessage.messageID);
+                }
+                // Handle cooldown message
+                else if (response.data.message && response.data.message.includes("You're currently in cooldown phase")) {
+                    const minutes = parseInt(response.data.message.match(/(\d+) minute/)[1], 10); // Extract cooldown time in minutes
 
                     await api.editMessage(`You are in cooldown for ${minutes} minute(s). I will notify you when the cooldown is over.`, processingMessage.messageID);
 
@@ -65,6 +69,7 @@ module.exports = {
                         await api.sendMessage(`Your cooldown has ended. You can try submitting the reaction again.`, threadID, messageID);
                     }, minutes * 60 * 1000); // Convert minutes to milliseconds
                 } else {
+                    // Handle other failure messages
                     const errorMessage = response.data.message || "Failed to send the reaction. Please try again.";
                     await api.editMessage(errorMessage, processingMessage.messageID);
                 }
