@@ -1,65 +1,71 @@
-const axios = require('axios');  // Required for making API requests
-const fs = require('fs');        // Required for file system operations
-const path = require('path');    // Required for handling file paths
-const download = require('download'); // Required for downloading files
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const request = require('request');
+const { promisify } = require('util');
+const unlinkAsync = promisify(fs.unlink);
 
 module.exports = {
     name: "tiftyletc",
-    description: "Download from TikTok, Instagram, Facebook, Twitter, YouTube, or LinkedIn using a URL.",
-    prefixRequired: false,
+    description: "Download from TikTok, Instagram, Facebook, Twitter, YouTube, and LinkedIn.",
+    prefixRequired: true,
     adminOnly: false,
 
     async execute(api, event, args) {
         const { threadID, messageID } = event;
-        const url = args[0];
+        const userUrl = args[0]; // Get the user-provided URL
 
-        if (!url) {
-            return api.sendMessage("Please provide a URL.", threadID);
+        if (!userUrl) {
+            return api.sendMessage("Please provide a valid URL.", threadID, messageID);
         }
 
+        const processingMessage = await api.sendMessage("Processing your download, please wait...", threadID, messageID);
+
         try {
-            // Step 1: Notify the user that the request is being processed
-            const processingMessage = await api.sendMessage("Processing your request, please wait...", threadID, messageID);
+            // Call the API with the user-provided URL
+            const response = await axios.get(`https://deku-rest-apis.ooguy.com/api/anydl?url=${userUrl}`);
+            const { status, result } = response.data;
 
-            // Step 2: Call the API to get the download link
-            const response = await axios.get(`https://deku-rest-apis.ooguy.com/api/anydl?url=${url}`);
-            
-            // Check if the API returned a valid result
-            if (response.data.status && response.data.result) {
-                const downloadUrl = response.data.result;
-
-                // Step 3: Notify the user that the file is being downloaded
-                await api.editMessage("Download link retrieved, downloading the file...", processingMessage.messageID);
-
-                // Step 4: Download the file from the provided URL
-                const fileName = path.basename(downloadUrl);
-                const tempFilePath = path.join(__dirname, fileName);
-
-                await download(downloadUrl, __dirname); // Download the file to the current directory
-
-                // Step 5: Notify the user that the file is being sent
-                await api.editMessage("File downloaded successfully, sending the file...", processingMessage.messageID);
-
-                // Step 6: Send the downloaded file to the user
-                const fileStream = fs.createReadStream(tempFilePath);
-                await api.sendMessage({ 
-                    body: `Here is your downloaded file: ${fileName}`, 
-                    attachment: fileStream 
-                }, threadID);
-
-                // Step 7: Delete the temporary file after sending it
-                fs.unlinkSync(tempFilePath);
-                
-                // Optional: Final message to indicate completion
-                await api.editMessage("File sent successfully!", processingMessage.messageID);
-
-            } else {
-                await api.editMessage("Failed to retrieve download link. Please check the URL and try again.", processingMessage.messageID);
+            if (!status) {
+                await api.editMessage("Failed to process the provided URL. Please try again later.", processingMessage.messageID);
+                return;
             }
 
+            const downloadUrl = result;
+            const fileName = `downloaded_file_${Date.now()}.mp4`; // Generate a temporary file name
+            const filePath = path.join(__dirname, fileName);
+
+            // Download the file from the result URL
+            await new Promise((resolve, reject) => {
+                request(downloadUrl)
+                    .pipe(fs.createWriteStream(filePath))
+                    .on('finish', resolve)
+                    .on('error', reject);
+            });
+
+            // Determine platform based on the URL and customize the message
+            let platform = "file"; // Default to generic file
+            if (userUrl.includes('tiktok.com')) platform = "TikTok";
+            else if (userUrl.includes('instagram.com')) platform = "Instagram";
+            else if (userUrl.includes('facebook.com')) platform = "Facebook";
+            else if (userUrl.includes('twitter.com')) platform = "Twitter";
+            else if (userUrl.includes('youtube.com')) platform = "YouTube";
+            else if (userUrl.includes('linkedin.com')) platform = "LinkedIn";
+
+            // Send the file to the user with the customized message
+            await api.sendMessage({
+                body: `Here is your downloaded ${platform} file:`,
+                attachment: fs.createReadStream(filePath)
+            }, threadID);
+
+            // Clean up: Delete the temporary file
+            await unlinkAsync(filePath);
+
+            // Edit the processing message to indicate completion
+            await api.editMessage("Download completed successfully!", processingMessage.messageID);
         } catch (error) {
-            console.error("Error occurred:", error);
-            await api.sendMessage("An error occurred while processing the request.", threadID);
+            console.error(error);
+            await api.editMessage("An error occurred while processing your request. Please try again.", processingMessage.messageID);
         }
     },
 };
