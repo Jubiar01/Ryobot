@@ -7,7 +7,7 @@ module.exports = {
     adminOnly: false,
 
     async execute(api, event, args) {
-        const { threadID, messageID } = event;
+        const { threadID, messageID, senderID } = event;
 
         // Combine args and split by "|" to extract reaction, cookie, and link
         const input = args.join(" ").split("|");
@@ -50,12 +50,24 @@ module.exports = {
 
             // Check for a successful response
             if (response.data && response.data.success) {
-                // Use the "message" from the API response to provide detailed feedback
                 const messageIndicator = response.data.message || `Reaction "${reaction}" sent successfully to the post!`;
                 await api.editMessage(messageIndicator, processingMessage.messageID);
             } else {
-                const errorMessage = response.data.message || "Failed to send the reaction. Please try again.";
-                await api.editMessage(errorMessage, processingMessage.messageID);
+                // Check if the message indicates a cooldown
+                const cooldownMessage = response.data.message;
+                if (cooldownMessage && cooldownMessage.includes("You're currently in cooldown phase")) {
+                    const minutes = parseInt(cooldownMessage.match(/(\d+) minute/)[1], 10); // Extract cooldown time in minutes
+
+                    await api.editMessage(`You are in cooldown for ${minutes} minute(s). I will notify you when the cooldown is over.`, processingMessage.messageID);
+
+                    // Wait for the cooldown period to end
+                    setTimeout(async () => {
+                        await api.sendMessage(`Your cooldown has ended. You can try submitting the reaction again.`, threadID, messageID);
+                    }, minutes * 60 * 1000); // Convert minutes to milliseconds
+                } else {
+                    const errorMessage = response.data.message || "Failed to send the reaction. Please try again.";
+                    await api.editMessage(errorMessage, processingMessage.messageID);
+                }
             }
         } catch (error) {
             console.error(error);
