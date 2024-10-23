@@ -19,6 +19,6 @@
     ],
     "autoLoad": true,
     "autopost": true,
-    "autogreet": true, 
-    "proxy": "49.157.62.203:8181" 
+    "autogreet": true,
+    "proxy": "198.23.239.134:6540:bieeclfy:s80pdbph8khp"
 }
